@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prédicteur de Prime d'Assurance Médicale</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js pour les interactions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
+    <!-- Chart.js pour les graphiques interactifs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <div x-data="{
+        formData: {
+            gender: 'female',
+            smoker: 'no',
+            region: 'southeast',
+            age: 30,
+            bmi: 25,
+            children: 0
+        },
+        result: null,
+        loading: false,
+        showResult: false,
+        chartData: null,
+        charts: {},
+        
+        init() {
+            this.fetchChartData();
+        },
+        
+        async fetchChartData() {
+            try {
+                const response = await fetch('/api/chart-data');
+                this.chartData = await response.json();
+                this.$nextTick(() => {
+                    this.initCharts();
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+            }
+        },
+        
+        initCharts() {
+            if (!this.chartData) return;
+            
+            // Age vs Premium Chart
+            const ageCtx = document.getElementById('ageChart').getContext('2d');
+            this.charts.ageChart = new Chart(ageCtx, {
+                type: 'scatter',
+                data: this.chartData.age_premium,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Âge: ${context.parsed.x}, Prime: ${context.parsed.y.toFixed(2)}$`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Prime d\'assurance ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Âge'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // BMI vs Premium Chart
+            const bmiCtx = document.getElementById('bmiChart').getContext('2d');
+            this.charts.bmiChart = new Chart(bmiCtx, {
+                type: 'bar',
+                data: this.chartData.bmi_premium,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Prime moyenne: ${context.raw.toFixed(2)}$`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Prime d\'assurance ($)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Smoker vs Premium Chart
+            const smokerCtx = document.getElementById('smokerChart').getContext('2d');
+            this.charts.smokerChart = new Chart(smokerCtx, {
+                type: 'bar',
+                data: this.chartData.smoker_premium,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Prime moyenne: ${context.raw.toFixed(2)}$`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Prime d\'assurance ($)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Region vs Premium Chart
+            const regionCtx = document.getElementById('regionChart').getContext('2d');
+            this.charts.regionChart = new Chart(regionCtx, {
+                type: 'bar',
+                data: this.chartData.region_premium,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Prime moyenne: ${context.raw.toFixed(2)}$`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Prime d\'assurance ($)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Age and Smoker vs Premium Chart
+            const smokeAgeCtx = document.getElementById('smokeAgeChart').getContext('2d');
+            this.charts.smokeAgeChart = new Chart(smokeAgeCtx, {
+                type: 'bar',
+                data: this.chartData.smoke_age_premium,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toFixed(2)}$`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Prime d\'assurance ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Groupes d\'âge'
+                            }
+                        }
+                    }
+                }
+            });
+        },
+        
+        updateChartHighlight() {
+            if (!this.result || !this.charts.ageChart) return;
+            
+            // Age chart - add user position marker
+            let datasets = this.charts.ageChart.data.datasets;
+            if (datasets.length === 1) {
+                datasets.push({
+                    label: 'Votre position',
+                    data: [{x: this.result.age, y: this.result.premium}],
+                    backgroundColor: 'rgba(255, 99, 132, 1)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    pointRadius: 8,
+                    pointHoverRadius: 10
+                });
+            } else {
+                datasets[1].data = [{x: this.result.age, y: this.result.premium}];
+            }
+            this.charts.ageChart.update();
+        },
+        
+        submitForm() {
+            this.loading = true;
+            this.showResult = false;
+            
+            // Créer FormData
+            const formData = new FormData();
+            formData.append('gender', this.formData.gender);
+            formData.append('smoker', this.formData.smoker);
+            formData.append('region', this.formData.region);
+            formData.append('age', this.formData.age);
+            formData.append('bmi', this.formData.bmi);
+            formData.append('children', this.formData.children);
+            
+            // Envoyer la requête
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.result = data;
+                this.loading = false;
+                this.showResult = true;
+                this.updateChartHighlight();
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                this.loading = false;
+            });
+        }
+    }">
+        <header class="bg-gradient-to-r from-blue-700 to-indigo-800 shadow-lg">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-3xl font-bold text-white">
+                    Prédicteur de Prime d'Assurance Médicale
+                </h1>
+                <p class="mt-2 text-blue-100">
+                    Un outil de prédiction basé sur l'intelligence artificielle pour estimer votre prime d'assurance
+                    médicale
+                </p>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <!-- Formulaire de prédiction -->
+                    <div class="lg:w-1/3">
+                        <div class="bg-white shadow rounded-lg p-6">
+                            <h2 class="text-lg font-medium text-gray-900 border-b pb-4 mb-4">Entrez vos informations
+                            </h2>
+
+                            <form @submit.prevent="submitForm" class="space-y-6">
+                                <!-- Genre -->
+                                <div>
+                                    <label for="gender" class="block text-sm font-medium text-gray-700">Genre</label>
+                                    <select id="gender" x-model="formData.gender"
+                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        <option value="female">Femme</option>
+                                        <option value="male">Homme</option>
+                                    </select>
+                                </div>
+
+                                <!-- Fumeur -->
+                                <div>
+                                    <label for="smoker" class="block text-sm font-medium text-gray-700">Êtes-vous fumeur
+                                        ?</label>
+                                    <select id="smoker" x-model="formData.smoker"
+                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        <option value="no">Non</option>
+                                        <option value="yes">Oui</option>
+                                    </select>
+                                </div>
+
+                                <!-- Région -->
+                                <div>
+                                    <label for="region" class="block text-sm font-medium text-gray-700">Région</label>
+                                    <select id="region" x-model="formData.region"
+                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        <option value="southeast">Sud-Est</option>
+                                        <option value="southwest">Sud-Ouest</option>
+                                        <option value="northeast">Nord-Est</option>
+                                        <option value="northwest">Nord-Ouest</option>
+                                    </select>
+                                </div>
+
+                                <!-- Age -->
+                                <div>
+                                    <label for="age" class="block text-sm font-medium text-gray-700">Âge: <span
+                                            x-text="formData.age"></span></label>
+                                    <input type="range" id="age" x-model="formData.age" min="18" max="65"
+                                        class="mt-1 block w-full">
+                                </div>
+
+                                <!-- IMC -->
+                                <div>
+                                    <label for="bmi" class="block text-sm font-medium text-gray-700">IMC: <span
+                                            x-text="formData.bmi"></span></label>
+                                    <input type="range" id="bmi" x-model="formData.bmi" min="15" max="40" step="0.1"
+                                        class="mt-1 block w-full">
+                                </div>
+
+                                <!-- Enfants -->
+                                <div>
+                                    <label for="children" class="block text-sm font-medium text-gray-700">Nombre
+                                        d'enfants: <span x-text="formData.children"></span></label>
+                                    <input type="range" id="children" x-model="formData.children" min="0" max="5"
+                                        class="mt-1 block w-full">
+                                </div>
+
+                                <!-- Bouton de prédiction -->
+                                <div>
+                                    <button type="submit"
+                                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        :disabled="loading">
+                                        <span x-show="!loading">Prédire ma prime</span>
+                                        <span x-show="loading">
+                                            Calcul en cours...
+                                        </span>
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Résultat -->
+                            <div x-show="showResult" x-cloak class="mt-6 bg-blue-50 p-4 rounded-md">
+                                <h3 class="text-lg font-medium text-blue-800">Résultat de la prédiction</h3>
+                                <p class="mt-2 text-blue-700">
+                                    Votre prime d'assurance estimée est de:
+                                </p>
+                                <p class="text-3xl font-bold text-blue-900 mt-2">
+                                    <span x-text="result?.premium"></span> $
+                                </p>
+                                <p class="text-sm text-blue-600 mt-4">
+                                    La prime moyenne pour les profils similaires est de <strong
+                                        x-text="result?.avg_similar"></strong> $.
+                                </p>
+                                <div x-show="result?.premium > result?.avg_similar" class="text-sm text-red-600 mt-2">
+                                    Votre prime est <strong
+                                        x-text="Math.round((result?.premium / result?.avg_similar * 100) - 100)"></strong>%
+                                    supérieure à la moyenne des profils similaires.
+                                </div>
+                                <div x-show="result?.premium < result?.avg_similar" class="text-sm text-green-600 mt-2">
+                                    Votre prime est <strong
+                                        x-text="Math.round((1 - result?.premium / result?.avg_similar) * 100)"></strong>%
+                                    inférieure à la moyenne des profils similaires.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard de visualisation -->
+                    <div class="lg:w-2/3">
+                        <div class="bg-white shadow rounded-lg p-6">
+                            <h2 class="text-lg font-medium text-gray-900 border-b pb-4 mb-4">Analyse des facteurs
+                                influençant les primes d'assurance</h2>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Graphique Âge vs Prime -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h3 class="text-md font-medium text-gray-700 mb-2">Âge vs Prime d'assurance</h3>
+                                    <div class="chart-container">
+                                        <canvas id="ageChart"></canvas>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        Le point rouge indique votre position après prédiction
+                                    </p>
+                                </div>
+
+                                <!-- Graphique IMC vs Prime -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h3 class="text-md font-medium text-gray-700 mb-2">IMC vs Prime d'assurance</h3>
+                                    <div class="chart-container">
+                                        <canvas id="bmiChart"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Graphique Fumeur vs Prime -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h3 class="text-md font-medium text-gray-700 mb-2">Impact du tabagisme sur les
+                                        primes</h3>
+                                    <div class="chart-container">
+                                        <canvas id="smokerChart"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Graphique Région vs Prime -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h3 class="text-md font-medium text-gray-700 mb-2">Variation des primes par région
+                                    </h3>
+                                    <div class="chart-container">
+                                        <canvas id="regionChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Graphique complémentaire - Âge et statut de fumeur -->
+                            <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-md font-medium text-gray-700 mb-2">Primes par groupe d'âge et statut de
+                                    fumeur</h3>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="smokeAgeChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 bg-blue-50 p-4 rounded-md">
+                                <h3 class="text-md font-medium text-blue-800">Analyse clé</h3>
+                                <ul class="mt-2 text-sm text-blue-700 space-y-2">
+                                    <li>• L'âge est un facteur déterminant dans le calcul des primes d'assurance</li>
+                                    <li>• Les fumeurs paient significativement plus que les non-fumeurs</li>
+                                    <li>• L'IMC influence directement le coût de l'assurance</li>
+                                    <li>• Le nombre d'enfants à charge peut augmenter le coût de la couverture</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-black">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                <p class="text-center text-gray-300 text-sm">
+                    Goli Yao
+                    Hugues © 2025 Prédicteur de Prime d'Assurance Médicale - Machine Learning
+                </p>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>
